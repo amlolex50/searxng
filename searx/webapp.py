@@ -1338,13 +1338,13 @@ def run():
     reloading as this is badly supported.  Instead you should be using the flask
     command line script’s run support::
 
-        flask --app searx.webapp run --debug --reload --host 127.0.0.1 --port 8888
-
-    .. _Flask.run: https://flask.palletsprojects.com/en/stable/api/#flask.Flask.run
+        export FLASK_APP=searx/webapp.py
+        flask run
     """
 
-    host: str = get_setting("server.bind_address")  # type: ignore
-    port: int = get_setting("server.port")  # type: ignore
+    # Cloud Run / container environment support
+    host: str = os.environ.get('HOST', get_setting("server.bind_address"))  # type: ignore
+    port: int = int(os.environ.get('PORT', get_setting("server.port")))  # type: ignore
 
     if searx.sxng_debug:
         logger.debug("run local development server (DEBUG) on %s:%s", host, port)
@@ -1356,7 +1356,7 @@ def run():
             extra_files=[DEFAULT_SETTINGS_FILE],
         )
     else:
-        logger.debug("run local development server on %s:%s", host, port)
+        logger.debug("run server on %s:%s", host, port)
         app.run(port=port, host=host, threaded=True)
 
 

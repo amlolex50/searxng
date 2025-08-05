@@ -19,6 +19,7 @@ to be loaded. The rules used for this can be found in the
 
 from __future__ import annotations
 
+import os
 import os.path
 from collections.abc import Mapping
 from itertools import filterfalse
@@ -189,6 +190,53 @@ def is_use_default_settings(user_settings):
     raise ValueError('Invalid value for use_default_settings')
 
 
+def apply_environment_overrides(cfg: dict) -> dict:
+    """Apply environment variable overrides for Cloud Run and container deployments."""
+    
+    # Override secret_key from environment variable
+    secret_key = os.environ.get('SEARXNG_SECRET_KEY')
+    if secret_key:
+        if 'server' not in cfg:
+            cfg['server'] = {}
+        cfg['server']['secret_key'] = secret_key
+    
+    # Override bind address and port for Cloud Run
+    bind_address = os.environ.get('SEARXNG_BIND_ADDRESS')
+    if bind_address:
+        if 'server' not in cfg:
+            cfg['server'] = {}
+        cfg['server']['bind_address'] = bind_address
+    
+    port = os.environ.get('SEARXNG_PORT')
+    if port:
+        if 'server' not in cfg:
+            cfg['server'] = {}
+        try:
+            cfg['server']['port'] = int(port)
+        except ValueError:
+            pass  # Keep default if invalid
+    
+    # Override instance name
+    instance_name = os.environ.get('SEARXNG_INSTANCE_NAME')
+    if instance_name:
+        if 'general' not in cfg:
+            cfg['general'] = {}
+        cfg['general']['instance_name'] = instance_name
+    
+    # Override debug mode
+    debug = os.environ.get('SEARXNG_DEBUG', '').lower()
+    if debug in ('true', '1', 'yes'):
+        if 'general' not in cfg:
+            cfg['general'] = {}
+        cfg['general']['debug'] = True
+    elif debug in ('false', '0', 'no'):
+        if 'general' not in cfg:
+            cfg['general'] = {}
+        cfg['general']['debug'] = False
+    
+    return cfg
+
+
 def load_settings(load_user_settings=True) -> tuple[dict, str]:
     """Function for loading the settings of the SearXNG application
     (:ref:`settings.yml <searxng settings.yml>`)."""
@@ -198,18 +246,21 @@ def load_settings(load_user_settings=True) -> tuple[dict, str]:
     cfg_folder = get_user_cfg_folder()
 
     if not load_user_settings or not cfg_folder:
+        cfg = apply_environment_overrides(cfg)
         return cfg, msg
 
     settings_yml = os.environ.get("SEARXNG_SETTINGS_PATH")
     if settings_yml and Path(settings_yml).is_file():
         # see get_user_cfg_folder() --> SEARXNG_SETTINGS_PATH points to a file
         settings_yml = Path(settings_yml).name
-    else:
+        cfg_folder = Path(settings_yml).parent
+    elif settings_yml and Path(settings_yml).is_dir():
         # see get_user_cfg_folder() --> SEARXNG_SETTINGS_PATH points to a folder
         settings_yml = SETTINGS_YAML
 
     cfg_file = cfg_folder / settings_yml
     if not cfg_file.exists():
+        cfg = apply_environment_overrides(cfg)
         return cfg, msg
 
     msg = f"load the user settings from {cfg_file}"
@@ -222,4 +273,7 @@ def load_settings(load_user_settings=True) -> tuple[dict, str]:
     else:
         cfg = user_cfg
 
+    # Apply environment variable overrides for Cloud Run deployment
+    cfg = apply_environment_overrides(cfg)
+    
     return cfg, msg

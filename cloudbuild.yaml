@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Google Cloud Build configuration for SearXNG
+
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.cloudrun'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/searxng:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/searxng:latest'
+      - '.'
+
+  # Push the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/searxng:latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'searxng'
+      - '--image=gcr.io/$PROJECT_ID/searxng:latest'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--cpu=1'
+      - '--memory=512Mi'
+      - '--timeout=30s'
+      - '--max-instances=10'
+      - '--concurrency=80'
+      - '--set-env-vars=SEARXNG_SECRET_KEY=$$SECRET_KEY'
+      - '--set-env-vars=SEARXNG_INSTANCE_NAME=SearXNG Cloud API'
+      - '--set-env-vars=SEARXNG_DEBUG=false'
+
+# Store images in Google Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/searxng:latest'
+
+# Substitute environment variables
+substitutions:
+  _SECRET_KEY: 'your-secret-key-here'  # Override this in trigger
+
+# Build options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
