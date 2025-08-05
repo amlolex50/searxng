@@ -2,7 +2,7 @@
 # Standard Dockerfile for Cloud Build compatibility
 
 # Build client assets
-FROM node:18-alpine as client
+FROM node:20-alpine as client
 
 WORKDIR /app
 
@@ -12,8 +12,8 @@ COPY . .
 # Change to client directory and install dependencies
 WORKDIR /app/client/simple
 
-# Install dependencies (use npm install if no package-lock.json)
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
+# Install dependencies including dev dependencies needed for build
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Build the client assets (outputs to searx/static/themes/simple)
 RUN npm run build
