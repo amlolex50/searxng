@@ -1,22 +1,21 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# This Dockerfile is a compatibility layer for Cloud Build
-# The actual Cloud Run optimized Dockerfile is Dockerfile.cloudrun
+# Standard Dockerfile for Cloud Build compatibility
 
-# Use the Cloud Run optimized Dockerfile
-FROM scratch as cloudrun-dockerfile
-COPY Dockerfile.cloudrun /Dockerfile.cloudrun
-
-# Build using the Cloud Run Dockerfile
+# Build client assets
 FROM node:18-alpine as client
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci --only=production
+# Copy the entire source tree first (needed for vite build)
+COPY . .
 
-# Copy client source
-COPY searx/static ./searx/static
+# Change to client directory and install dependencies
+WORKDIR /app/client/simple
+
+# Install dependencies (use npm install if no package-lock.json)
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
+
+# Build the client assets (outputs to searx/static/themes/simple)
 RUN npm run build
 
 # Python runtime stage
@@ -41,11 +40,8 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY --chown=searxng:searxng . .
-
-# Copy built client assets from previous stage
-COPY --from=client --chown=searxng:searxng /app/searx/static ./searx/static
+# Copy application code with built client assets from previous stage
+COPY --from=client --chown=searxng:searxng /app .
 
 # Switch to non-root user
 USER searxng
