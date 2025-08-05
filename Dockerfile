@@ -44,6 +44,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code with built client assets from previous stage
 COPY --from=client --chown=searxng:searxng /app .
 
+# Copy and make startup script executable
+COPY --chown=searxng:searxng start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Switch to non-root user
 USER searxng
 
@@ -60,4 +64,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 EXPOSE 8080
 
 # Start the application
-CMD ["python", "-m", "searx.webapp"]
+CMD ["/app/start.sh"]
