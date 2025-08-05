@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libffi-dev \
     libssl-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
