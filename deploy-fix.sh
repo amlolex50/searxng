@@ -7,7 +7,7 @@ set -e
 
 echo "🚀 Deploying SearXNG with API fixes to Cloud Run..."
 
-# Set project variables
+# Set project variables  
 PROJECT_ID="teachaisearch"
 SERVICE_NAME="teachaisearch"
 REGION="us-central1"
@@ -15,7 +15,7 @@ REGION="us-central1"
 # Generate a secure secret key for production
 SECRET_KEY=$(openssl rand -base64 32)
 
-echo "📦 Building and deploying to Cloud Run..."
+echo "📦 Building and deploying to Cloud Run with bot detection disabled..."
 
 # Deploy with the fixed configuration
 gcloud run deploy $SERVICE_NAME \

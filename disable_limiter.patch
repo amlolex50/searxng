@@ -1,0 +1,11 @@
+--- a/searx/limiter.py
++++ b/searx/limiter.py
+@@ -232,7 +232,7 @@ def install():
+     valkey_client = valkeydb.client()
+     botdetection.init(cfg, valkey_client)
+ 
+-    if not (settings['server']['limiter'] or settings['server']['public_instance']):
++    if not settings['server']['limiter']:
+         return
+ 
+     if not valkey_client:

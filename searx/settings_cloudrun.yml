@@ -36,6 +36,7 @@ search:
     - json
     - csv
     - rss
+    - xml
 
 server:
   # Cloud Run configuration
@@ -44,6 +45,7 @@ server:
   public_instance: false  # Set to false to disable aggressive bot detection
   image_proxy: true
   limiter: false  # Disable limiter for API access
+  method: "GET"  # Allow GET requests for API
   
   # Security - override with environment variable in production
   secret_key: "ultrasecretkey"  # MUST be overridden via SEARXNG_SECRET_KEY env var
