@@ -472,6 +472,18 @@ def pre_request():
         if k not in sxng_request.form:
             sxng_request.form[k] = v
 
+    # merge JSON body (if application/json)
+    if sxng_request.is_json:
+        try:
+            json_data = sxng_request.get_json(silent=True) or {}
+            if isinstance(json_data, dict):
+                for k, v in json_data.items():
+                    if k not in sxng_request.form:
+                        sxng_request.form[k] = v
+        except Exception as e:  # pylint: disable=broad-except
+            logger.exception(e, exc_info=True)
+            sxng_request.errors.append(gettext('Invalid JSON payload'))
+
     if sxng_request.form.get('preferences'):
         preferences.parse_encoded_data(sxng_request.form['preferences'])
     else:
@@ -615,6 +627,11 @@ def search():
     output_format = sxng_request.form.get('format') or sxng_request.args.get('format', 'html')
     if output_format not in OUTPUT_FORMATS:
         output_format = 'html'
+    # If no explicit format is provided, honor Accept header for JSON
+    if sxng_request.form.get('format') is None and sxng_request.args.get('format') is None:
+        accept = sxng_request.headers.get('Accept', '')
+        if 'application/json' in accept:
+            output_format = 'json'
 
     # Allow all formats for API access - bypass format validation
     # if output_format not in settings['search']['formats']:
