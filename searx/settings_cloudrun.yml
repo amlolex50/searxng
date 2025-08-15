@@ -41,8 +41,9 @@ server:
   # Cloud Run configuration
   port: 8080
   bind_address: "0.0.0.0"
-  public_instance: true
+  public_instance: false  # Set to false to disable aggressive bot detection
   image_proxy: true
+  limiter: false  # Disable limiter for API access
   
   # Security - override with environment variable in production
   secret_key: "ultrasecretkey"  # MUST be overridden via SEARXNG_SECRET_KEY env var
@@ -115,3 +116,20 @@ enabled_plugins: []
 # Disable checker for faster startup
 checker:
   off_when_debug: true
+
+# Bot detection configuration - disable aggressive checks for API usage
+botdetection:
+  ip_limit:
+    # Disable link token requirement for API access
+    link_token: false
+    # Allow more requests from same IP
+    filter_link_local: false
+  ip_lists:
+    # Don't automatically pass searxng.org IPs
+    pass_searxng_org: false
+    # Add your trusted IPs here if needed
+    pass_ip: []
+    block_ip: []
+
+# Limiter configuration for API usage
+limiter: false

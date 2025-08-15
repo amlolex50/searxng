@@ -44,6 +44,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code with built client assets from previous stage
 COPY --from=client --chown=searxng:searxng /app .
 
+# Copy custom limiter configuration for Cloud Run
+COPY --chown=searxng:searxng limiter_cloudrun.toml /app/limiter.toml
+
 # Copy and make startup script executable
 COPY --chown=searxng:searxng start.sh /app/start.sh
 RUN chmod +x /app/start.sh
@@ -53,6 +56,7 @@ USER searxng
 
 # Environment variables
 ENV SEARXNG_SETTINGS_PATH=/app/searx/settings_cloudrun.yml
+ENV SEARXNG_LIMITER_CFG_PATH=/app/limiter.toml
 ENV HOST=0.0.0.0
 ENV PORT=8080
 
