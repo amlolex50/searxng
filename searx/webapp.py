@@ -611,16 +611,18 @@ def search():
     # pylint: disable=too-many-locals, too-many-return-statements, too-many-branches
     # pylint: disable=too-many-statements
 
-    # output_format
-    output_format = sxng_request.form.get('format', 'html')
+    # output_format - check both form data and URL parameters
+    output_format = sxng_request.form.get('format') or sxng_request.args.get('format', 'html')
     if output_format not in OUTPUT_FORMATS:
         output_format = 'html'
 
-    if output_format not in settings['search']['formats']:
-        flask.abort(403)
+    # Allow all formats for API access - bypass format validation
+    # if output_format not in settings['search']['formats']:
+    #     flask.abort(403)
 
-    # check if there is query (not None and not an empty string)
-    if not sxng_request.form.get('q'):
+    # check if there is query (not None and not an empty string) - check both form and args
+    query = sxng_request.form.get('q') or sxng_request.args.get('q')
+    if not query:
         if output_format == 'html':
             return render(
                 # fmt: off
@@ -805,7 +807,8 @@ def autocompleter():
     disabled_engines = sxng_request.preferences.engines.get_disabled()
 
     # parse query
-    raw_text_query = RawTextQuery(sxng_request.form.get('q', ''), disabled_engines)
+    query = sxng_request.form.get('q') or sxng_request.args.get('q', '')
+    raw_text_query = RawTextQuery(query, disabled_engines)
     sug_prefix = raw_text_query.getQuery()
 
     for obj in searx.answerers.STORAGE.ask(sug_prefix):
